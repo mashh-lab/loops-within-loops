@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.vercel
+out
+.env
+.env.local
+.env.development
+.env.test
+.env.production 

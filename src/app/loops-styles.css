@@ -1,0 +1,480 @@
+/* Content from old-react-app/src/App.css */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrollbars */
+  background-color: #000000; /* Dark background for the fractal */
+  color: white;
+  font-family: 'Inter', 'Arial', sans-serif; /* Using Inter font */
+}
+
+.App {
+  width: 100vw;
+  height: 100vh;
+  position: relative; /* For positioning children absolutely/fixed */
+  overflow: hidden; /* Prevent scrollbars on App itself from panel animation */
+}
+
+.controls-info {
+  position: absolute;
+  bottom: 15px; /* Adjusted position */
+  left: 15px; /* Moved to bottom-left */
+  transform: none;
+  padding: 10px 15px;
+  background-color: rgba(20, 20, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 0.85em;
+  text-align: left;
+  z-index: 50;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  color: #d0d0d0;
+}
+
+.fractal-container {
+  width: 100%;
+  height: 100%;
+  position: absolute; /* Or fixed, to be behind the panel */
+  top: 0;
+  left: 0;
+  z-index: 1; /* Behind story panel and arrow */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.story-stream-container {
+  width: 400px; /* Or vw, e.g., 35vw */
+  max-width: 90vw; /* Ensure it doesn't take full screen on small viewports if width is fixed */
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 100;
+  background-color: rgba(40, 40, 45, 0.45); /* Darker frosted glass tint */
+  backdrop-filter: blur(8px); /* Reduced blur */
+  -webkit-backdrop-filter: blur(8px); /* Reduced blur for Safari */
+  border-left: 1px solid rgba(255, 255, 255, 0.1); /* Adjusted border for darker bg */
+  color: #e0e0e0; /* Light text color for the panel */
+  overflow-y: auto; /* Allow scrolling within the panel */
+  overflow-x: hidden;
+  padding: 0;
+  box-sizing: border-box;
+  transition: transform 0.4s ease-in-out; /* Ensure transition is active */
+  box-shadow: -5px 0px 20px rgba(0, 0, 0, 0.4); /* Adjusted shadow for darker panel */
+  cursor: pointer; /* Indicate clickability */
+}
+
+.story-stream-container.panel-closed {
+  transform: translateX(100%);
+  box-shadow: none;
+  animation: peekPanelContent 3s infinite ease-in-out; /* Keep peek animation */
+}
+
+.story-stream-container.panel-open {
+  transform: translateX(0%);
+  /* No peek animation when open */
+  animation: none; /* Ensure peek animation is off when open */
+}
+
+/* Story content specific styling (e.g. lists) */
+.story-stream-container .story-content ul,
+.story-stream-container .story-content ol {
+  margin-left: 1rem; /* Adjusted from 2rem for panel context */
+  padding-left: 1rem; /* Ensure markers are within this margin */
+}
+
+.story-stream-container .story-content li {
+  margin-bottom: 0.6em;
+  padding-left: 0.3em;
+  line-height: 1.65;
+}
+
+.story-stream-container .story-content ul li::marker {
+  /* color: #555; */ /* Example if text is dark */
+}
+
+.story-stream-container .story-content ol li::marker {
+  /* color: #555; */ /* Example if text is dark */
+  /* font-weight: bold; */
+}
+
+/* Keyframes for the panel to peek out (ensure this is still present) */
+@keyframes peekPanelContent {
+  0%,
+  100% {
+    /* transform: translateX(100%); */ /* Base transform handled by .panel-closed */
+  }
+  25% {
+    /* Default (Desktop) Peek: 150px */
+    transform: translateX(calc(100% - 150px));
+  }
+  50% {
+    /* transform: translateX(100%); */
+  }
+}
+
+/* Media query for mobile adjustments to the peek animation */
+@media (max-width: 768px) {
+  @keyframes peekPanelContent {
+    /* Redefine for mobile */
+    0%,
+    100% {
+      /* Base transform still effectively translateX(100%) due to .panel-closed */
+    }
+    25% {
+      /* Mobile Peek: 60px */
+      transform: translateX(calc(100% - 60px));
+    }
+    50% {
+      /* Base transform still effectively translateX(100%) */
+    }
+  }
+
+  /* Styles for .story-stream-container.panel-closed will automatically use this */
+  /* redefined animation on mobile due to CSS cascade rules. */
+}
+
+/* Remove old media query specific layout rules */
+/* Styles that were inside @media (max-width: 768px) for .App, .fractal-container, */
+/* .story-stream-container (like display:block, absolute positioning for fractal, pointer-events) */
+/* and animation/hint pseudo-elements should be removed or verified if still applicable globally. */
+/* The new layout is unified. */
+
+/* Remove styles for .story-toggle-arrow and @keyframes beckonAndGlow */
+
+/* Media query for smaller screens to adjust arrow position when panel is open */
+@media (max-width: 460px) {
+  .story-toggle-arrow.arrow-open {
+    right: auto; /* Override the default desktop right: 400px */
+    left: 10px; /* Position on the left side */
+    border-radius: 0 8px 8px 0; /* Rounded on the right side for left-attachment */
+    border-left: 1px solid rgba(255, 255, 255, 0.2); /* Add left border */
+    border-right: none; /* Remove right border that was for right-attachment */
+    animation: none; /* Ensure no beckoning animation when open and on the left */
+    /* The base transform: translateY(-50%) will still apply for vertical centering. */
+    /* The arrow character '→' (from JS) on the left, pointing right, implies closing to the right. */
+  }
+
+  /* Optional: Adjust panel width on very small screens if needed, though max-width: 90vw should handle most cases */
+  /* .story-stream-container.panel-open {
+    max-width: calc(100vw - 70px); // Example: ensure space for a 60px arrow + 10px gap
+  } */
+}
+
+/* End of content from old-react-app/src/App.css */
+
+/* Content from old-react-app/src/StoryStream.css */
+/* src/StoryStream.css */
+.story-stream {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Add this to center the inline-block title area */
+  /* gap: 20px; Let children define their margins for more control */
+  padding: 10px;
+  height: 100%; /* Occupy available height from parent */
+  box-sizing: border-box;
+  position: relative; /* For absolute positioning of cards if needed, or for stacking context */
+  overflow-y: auto;
+}
+
+.story-title-area {
+  display: inline-block; /* Makes the div shrink to fit its content */
+  text-align: center; /* Keeps text centered within the now smaller box */
+  /* cursor: pointer; Removed as panel is clickable */
+  padding: 15px 25px; /* Adjust padding: more horizontal for a pleasing shape */
+  position: relative; /* For positioning the indicator */
+  flex-shrink: 0; /* Prevent title area from shrinking */
+  pointer-events: auto; /* Ensures title area is always clickable, even if parent has pointer-events: none */
+
+  /* Frosted Glass Effect Removed */
+  /* backdrop-filter: blur(8px) brightness(90%); */
+  /* -webkit-backdrop-filter: blur(8px) brightness(90%); */
+
+  border-radius: 10px; /* Slightly more rounded */
+  margin-bottom: 15px; /* Add some space below the title area before content starts */
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */ /* Optional: faint border to define the glass edge - REMOVED */
+  /* box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); Removed */
+}
+
+/* Ensure text within has good contrast */
+.story-title-area h2,
+.story-title-area h4 {
+  pointer-events: none; /* Keep this so clicks go to the parent div */
+  /* text-shadow: 0 1px 2px rgba(0,0,0,0.7); Removed text shadow */
+}
+
+/* Styles for the collapse indicator shown when story is EXPANDED (primarily for mobile) */
+.collapse-indicator.is-expanded-indicator {
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  font-size: 1.1em;
+  color: #555; /* Darker for light background */
+  /* text-shadow: 0 1px 2px rgba(0,0,0,0.5); */
+}
+
+/* Hide the expanded indicator on desktop */
+@media (min-width: 769px) {
+  .story-title-area > .collapse-indicator.is-expanded-indicator {
+    display: none !important; /* More specific and forceful override */
+  }
+  /* Desktop specific title area adjustments if needed (e.g. less blur or different bg) */
+  /* .story-title-area { backdrop-filter: blur(4px) brightness(95%); } */
+}
+
+.story-stream h2 {
+  text-align: center;
+  color: #f0f0f0; /* Light color */
+  margin: 10px 0 5px 0; /* Adjusted margins */
+  font-size: 2em;
+  font-weight: 300;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); /* Subtle dark shadow */
+}
+
+.story-subtitle {
+  text-align: center;
+  color: #c0c0c0; /* Light color */
+  margin: 0 0 10px 0; /* Adjusted margins */
+  font-size: 1em;
+  font-style: italic;
+  font-weight: normal;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); /* Subtle dark shadow */
+}
+
+.story-cards-viewport {
+  flex-grow: 1;
+  position: relative; /* Needed if cards are to be absolutely positioned within it for stacking */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center cards horizontally */
+  gap: 25px; /* This will be the space between cards if they are in flow */
+}
+
+.story-card {
+  background-color: transparent; /* No card background */
+  border: none; /* No border */
+  color: #d5d5d5; /* Lighter text for readability */
+  font-size: 1.05em; /* Slightly larger font */
+  line-height: 1.7;
+  box-shadow: none; /* No shadow */
+
+  /* Initial state for animation */
+  opacity: 0;
+  /* Start slightly scaled down for a subtle zoom-in on appear */
+  transform: translateY(20px) scale(0.98);
+  transition:
+    opacity 0.9s ease-out,
+    transform 0.9s ease-out; /* Longer transition for more ethereal feel */
+  width: 90%; /* Make cards take most of the stream width */
+  max-width: 600px; /* But not too wide */
+  /* min-height: 150px; /* Removed, content will dictate height */
+}
+
+.story-card-content {
+  padding: 15px 0px; /* Reduced side padding as there's no card box */
+  text-align: center; /* Center text for floating effect */
+}
+
+/* Styling for HR tags if they are given the class 'story-divider' */
+.story-card-content hr.story-divider {
+  border: none;
+  border-top: 1px solid #333; /* Darker divider for black background */
+  margin: 2rem auto; /* Center HR */
+  width: 50%; /* Make HR shorter */
+}
+
+.story-card.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  z-index: 5;
+}
+
+/* Update previous cards to remain visible after they're shown */
+.story-card.is-previous {
+  opacity: 1; /* Keep visible */
+  transform: translateY(0) scale(1); /* Keep in its active position */
+  z-index: 4; /* Ensure it's behind the current active card if they overlap during transition */
+  /* No transition needed since it should stay visible */
+}
+
+/* Next cards are ready to fade in */
+.story-card.is-next {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  z-index: 1;
+}
+
+/* Remove hover effects as cards are transparent and interaction is via scroll */
+.story-card.is-active:hover {
+  transform: scale(1); /* No change on hover */
+  box-shadow: none;
+}
+
+.story-card p {
+  margin-bottom: 1em; /* Add some space between paragraphs within a card */
+}
+
+.story-card p:last-child {
+  margin-bottom: 0;
+}
+
+/* Keep keyframes if they are to be used by other elements or a different logic later, otherwise they can be removed */
+/* For now, floatUpAndFadeIn and floatContinuously are not directly used by story-card anymore */
+
+/* @keyframes floatUpAndFadeIn { ... } */
+/* @keyframes floatContinuously { ... } */
+
+/* New content layout */
+.story-content-wrapper {
+  flex-grow: 1; /* Allows this wrapper to take available vertical space */
+  overflow-y: auto; /* Enables scrolling for the content within this wrapper */
+  display: flex; /* Using flex to help manage children like .story-content and .bottom-spacer */
+  flex-direction: column;
+  min-height: 0; /* Crucial for flex children that scroll */
+
+  /* Base (Expanded) Styles */
+  max-height: 200vh; /* Sufficiently large to accommodate content */
+  opacity: 1;
+  visibility: visible;
+  /* Transition for EXPANDING (can keep this or adjust if needed) */
+  transition:
+    max-height 0.4s ease-in-out,
+    /* Slightly increased duration for expand */ opacity 0.3s ease-in-out 0.1s,
+    /* Opacity fades in as height expands */ visibility 0s linear 0s;
+}
+
+.story-content-wrapper.content-collapsed {
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  /* Transition for COLLAPSING (slower and smoother) */
+  transition:
+    opacity 0.3s ease-in-out,
+    /* Slower opacity fade out */ max-height 0.4s ease-in-out 0.1s,
+    /* Slower height collapse, starts after opacity begins fading */ visibility
+      0s linear 0.4s; /* Visibility hidden after height transition completes */
+}
+
+.story-content {
+  max-width: 600px;
+  width: 90%; /* Default width */
+  margin: 0 auto; /* Center the content block */
+  padding-top: 20px; /* Space above first story segment */
+  padding-bottom: 20px; /* Space below last story segment (before bottom-spacer) */
+  flex-shrink: 0; /* Content itself should not shrink smaller than its text */
+}
+
+.story-segment {
+  margin-bottom: 2rem;
+  color: #d5d5d5; /* Light color for main story text */
+  font-size: 1.05em;
+  line-height: 1.7;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); /* Subtle dark shadow */
+}
+
+.story-segment-content {
+  padding: 10px 0; /* Padding within each segment if needed */
+}
+
+/* Style for links within story content */
+.story-segment-content a {
+  color: inherit; /* Inherit text color from parent (e.g., #d5d5d5) */
+  text-decoration: underline;
+  transition: color 0.2s ease;
+  /* text-shadow: none; /* Typically links don't have text-shadow or inherit it */
+}
+
+.story-segment-content a:hover,
+.story-segment-content a:focus {
+  color: #fff; /* Slightly brighter on hover/focus for feedback */
+  text-decoration: underline;
+}
+
+.segment-divider {
+  margin: 2.5rem auto;
+  width: 50%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Make sure lists are properly styled */
+.story-segment ul,
+.story-segment ol {
+  text-align: left;
+  padding-left: 1rem; /* Indentation for the list itself */
+}
+
+.story-segment li {
+  margin-bottom: 0.6em;
+  padding-left: 0.3em; /* Space between marker and text */
+  line-height: 1.65;
+}
+
+/* Styling for unordered list markers */
+.story-segment ul li::marker {
+  color: #aaa; /* Light marker color */
+  font-size: 1.1em;
+}
+
+/* Styling for ordered list markers */
+.story-segment ol li::marker {
+  color: #aaa; /* Light marker color */
+  font-weight: bold;
+  font-size: 1em;
+}
+
+/* Paragraph styling */
+.story-segment p {
+  margin-bottom: 1em;
+}
+
+.story-segment p:last-child {
+  margin-bottom: 0;
+}
+
+/* Bottom spacer to ensure scroll area extends beyond content */
+.bottom-spacer {
+  height: 60vh; /* Default spacer height for desktop */
+  flex-shrink: 0; /* Prevent spacer from shrinking */
+}
+
+/* Media query for mobile adjustments */
+@media (max-width: 768px) {
+  .story-content {
+    width: 90%; /* Consistent with general content width */
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  .bottom-spacer {
+    height: 130vh; /* Increased spacer for mobile scrollability */
+  }
+
+  .story-title-area {
+    padding: 12px 20px; /* Adjust padding for mobile if needed */
+    margin-bottom: 10px;
+  }
+  /* No specific overrides for .story-content-wrapper needed here for now,
+     the default max-height: 200vh should be sufficient for mobile too given overflow: auto.
+     If specific height calculation based on viewport is needed for mobile expanded state,
+     it could be added here for .story-content-wrapper:not(.content-collapsed)
+  */
+} /* This is the correct closing brace for the @media query */
+
+/* Styles for the collapse indicator when story is expanded */
+.collapse-indicator.is-expanded-indicator {
+  display: block; /* Or inline-block if preferred */
+  text-align: center;
+  margin-top: 8px; /* Space below subtitle */
+  font-size: 1.1em;
+  color: #555; /* Darker for light background */
+  /* No animation needed for this static indicator, but could add a subtle pulse if desired */
+  /* pointer-events: none; /* Ensure it doesn't interfere with clicks on title-area if it overlaps awkwardly */
+}
+
+/* NO other content or braces should follow unless it's a new top-level rule or comment */
+/* End of content from old-react-app/src/StoryStream.css */
