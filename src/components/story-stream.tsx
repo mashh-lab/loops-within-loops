@@ -1,4 +1,4 @@
-import { Dispatch, FormEvent, PointerEvent, SetStateAction } from 'react'
+import { Dispatch, FormEvent, SetStateAction } from 'react'
 import '../app/loops-styles.css' // Renamed CSS import path
 
 interface StoryStreamProps {
@@ -80,25 +80,6 @@ export default function StoryStream({
                 borderRadius: '10px', // Rounded all corners
                 marginTop: '5px', // Further reduced marginTop
                 marginBottom: '20px',
-              }}
-              onPointerDown={(e: PointerEvent<HTMLDivElement>) => {
-                // Only stop propagation if the target isn't the input field or the button
-                const targetElement = e.target as HTMLElement
-                if (
-                  !targetElement.closest('input') &&
-                  !targetElement.closest('button')
-                ) {
-                  e.stopPropagation()
-                }
-              }}
-              onPointerUp={(e: PointerEvent<HTMLDivElement>) => {
-                const targetElement = e.target as HTMLElement
-                if (
-                  !targetElement.closest('input') &&
-                  !targetElement.closest('button')
-                ) {
-                  e.stopPropagation()
-                }
               }}
             >
               <form

@@ -250,24 +250,33 @@ const LoopsApp: FC = () => {
   const handlePanelPointerUp = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       if (event.button !== 0) return
+
+      // If the tap was on an interactive element, do nothing and let default behavior proceed.
+      if ((event.target as HTMLElement).closest('a, button, input, textarea')) {
+        tapStartPosRef.current = null // Clear tap start position
+        return
+      }
+
       if (tapStartPosRef.current) {
         const deltaX = event.clientX - tapStartPosRef.current.x
         const deltaY = event.clientY - tapStartPosRef.current.y
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
         if (distance < MAX_TAP_MOVEMENT) {
+          // This part is for taps on the panel itself, not on the close button area or interactive elements.
+          // The close button area check (event.clientX > rect.right - 20) should be inside this.
           const panel = storyStreamRef.current
           if (panel) {
             const rect = panel.getBoundingClientRect()
             if (isStoryPanelOpen && event.clientX > rect.right - 20) {
-            } else if (
-              (event.target as HTMLElement).closest(
-                'a, button, input, textarea',
-              )
-            ) {
+              // This is the specific logic for the invisible close button area on the right edge.
+              // If we want to keep this, it should remain.
+              // However, the primary goal here is general panel tap-to-toggle.
             } else {
+              // If not the close button area, and not an interactive element (checked above), toggle.
               toggleStoryPanel()
             }
           } else {
+            // Fallback if panel ref is not available, but should ideally not be hit if panel is visible.
             toggleStoryPanel()
           }
         }
