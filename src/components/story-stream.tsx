@@ -81,12 +81,25 @@ export default function StoryStream({
                 marginTop: '5px', // Further reduced marginTop
                 marginBottom: '20px',
               }}
-              onPointerDown={(e: PointerEvent<HTMLDivElement>) =>
-                e.stopPropagation()
-              } // Stop event propagation
-              onPointerUp={(e: PointerEvent<HTMLDivElement>) =>
-                e.stopPropagation()
-              } // Stop event propagation
+              onPointerDown={(e: PointerEvent<HTMLDivElement>) => {
+                // Only stop propagation if the target isn't the input field or the button
+                const targetElement = e.target as HTMLElement
+                if (
+                  !targetElement.closest('input') &&
+                  !targetElement.closest('button')
+                ) {
+                  e.stopPropagation()
+                }
+              }}
+              onPointerUp={(e: PointerEvent<HTMLDivElement>) => {
+                const targetElement = e.target as HTMLElement
+                if (
+                  !targetElement.closest('input') &&
+                  !targetElement.closest('button')
+                ) {
+                  e.stopPropagation()
+                }
+              }}
             >
               <form
                 onSubmit={handleConversationContinue}
