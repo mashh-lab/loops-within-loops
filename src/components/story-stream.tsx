@@ -1,32 +1,36 @@
-import { Dispatch, FormEvent, PointerEvent, SetStateAction } from 'react'
+import { Dispatch, FormEvent, SetStateAction } from 'react'
 import '../app/loops-styles.css' // Renamed CSS import path
 
 interface StoryStreamProps {
   storyTitle?: string
   storySubtitle?: string
   storySegments?: string[]
-  city: string
-  setCity: Dispatch<SetStateAction<string>>
-  weatherResponse: string
-  weatherError: string
-  handleWeatherSubmit: (event: FormEvent<HTMLFormElement>) => void
+  continuationResponse: string
+  continuationError: string
+  handleConversationContinue: (event: FormEvent<HTMLFormElement>) => void
   isStoryPanelOpen: boolean
   setLastDirectInputTime: Dispatch<SetStateAction<number>>
   scrollProgress: number // Added from LoopsApp
+  currentUserInput: string // Added for user text input
+  setCurrentUserInput: Dispatch<SetStateAction<string>> // Added for user text input
+  footerHtml?: string // New prop for combined footer HTML
 }
 
 export default function StoryStream({
   storyTitle,
   storySubtitle,
   storySegments,
-  city,
-  setCity,
-  weatherResponse,
-  weatherError,
-  handleWeatherSubmit,
+  continuationResponse,
+  continuationError,
+  handleConversationContinue,
   isStoryPanelOpen,
   setLastDirectInputTime,
+  currentUserInput, // Added for user text input
+  setCurrentUserInput, // Added for user text input
+  footerHtml, // Destructure new prop
 }: StoryStreamProps) {
+  // const [isButtonPressed, setIsButtonPressed] = useState(false); // Removed unused state
+
   const titleAreaStyle = {
     // backgroundColor: `rgba(30, 30, 30, ${backgroundTintAlpha.toFixed(3)})`, // Already commented out
   }
@@ -69,65 +73,75 @@ export default function StoryStream({
           </div>
           {isStoryPanelOpen && (
             <div
-              className="weather-input-container"
+              className="conversation-input-container"
               style={{
-                padding: '20px',
-                background: 'rgba(30,30,30,0.8)',
-                borderRadius: '0 0 10px 10px',
-                marginTop: '20px',
+                padding: '15px 20px 20px 20px',
+                background: 'rgba(50, 50, 50, 0.65)',
+                borderRadius: '10px', // Rounded all corners
+                marginTop: '5px', // Further reduced marginTop
                 marginBottom: '20px',
               }}
-              onPointerDown={(e: PointerEvent<HTMLDivElement>) =>
-                e.stopPropagation()
-              } // Stop event propagation
-              onPointerUp={(e: PointerEvent<HTMLDivElement>) =>
-                e.stopPropagation()
-              } // Stop event propagation
             >
               <form
-                onSubmit={handleWeatherSubmit}
+                onSubmit={handleConversationContinue}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '10px',
                 }}
               >
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => {
-                    setCity(e.target.value)
-                    setLastDirectInputTime(Date.now())
-                  }}
-                  placeholder="Enter city for weather"
+                <div
                   style={{
-                    padding: '10px',
-                    borderRadius: '5px',
-                    border: '1px solid #555',
-                    background: '#444',
-                    color: '#eee',
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    padding: '10px',
-                    borderRadius: '5px',
-                    border: 'none',
-                    background: '#007bff',
-                    color: 'white',
-                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'transparent',
+                    gap: '10px', // Increased gap to 10px
                   }}
                 >
-                  Get Weather
-                </button>
+                  <input
+                    type="text"
+                    value={currentUserInput}
+                    onChange={(e) => {
+                      setCurrentUserInput(e.target.value)
+                      setLastDirectInputTime(Date.now())
+                    }}
+                    placeholder="Continue the conversation?"
+                    style={{
+                      padding: '10px',
+                      borderRadius: '5px',
+                      border: 'none',
+                      outline: 'none', // Removed focus glow
+                      background: 'rgba(80, 80, 80, 0.6)', // New lighter, more transparent style
+                      color: '#eee',
+                      flexGrow: 1,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    // Pointer events related to isButtonPressed were already commented out/removed
+                    style={{
+                      background: 'rgba(95, 95, 95, 0.6)',
+                      border: 'none',
+                      color: '#ddd',
+                      padding: '10px 15px',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      lineHeight: '1.5',
+                      // transform: 'scale(1)', // Ensure no lingering transform
+                      // transition: 'transform 0.05s ease-out, background-color 0.05s ease-out', // Transition not needed without active state change
+                    }}
+                  >
+                    ➔
+                  </button>
+                </div>
               </form>
-              {weatherError && (
+              {continuationError && (
                 <p style={{ color: 'red', marginTop: '10px' }}>
-                  {weatherError}
+                  {continuationError}
                 </p>
               )}
-              {weatherResponse && !weatherError && (
+              {continuationResponse && !continuationError && (
                 <p
                   style={{
                     color: '#eee',
@@ -135,15 +149,27 @@ export default function StoryStream({
                     whiteSpace: 'pre-wrap',
                   }}
                 >
-                  <strong>Weather:</strong>
+                  <strong>Friend:</strong>
                   <br />
-                  {weatherResponse}
+                  {continuationResponse}
                 </p>
               )}
             </div>
           )}
-          <div className="bottom-spacer"></div>{' '}
-          {/* Spacer is now after the weather form */}
+          {/* Footer section for dedication and GitHub link, rendered if panel is open and content exists */}
+          {isStoryPanelOpen && footerHtml && (
+            <div
+              className="story-footer-links"
+              style={{
+                textAlign: 'center',
+                padding: '15px 0px',
+                borderTop: '1px solid #444', // Optional: adds a separator
+                marginTop: '0px',
+              }}
+              dangerouslySetInnerHTML={{ __html: footerHtml }} // Render combined footer
+            />
+          )}
+          <div className="bottom-spacer"></div>
         </>
       )}
     </div>

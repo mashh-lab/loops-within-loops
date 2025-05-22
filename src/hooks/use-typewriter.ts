@@ -10,7 +10,7 @@ import {
 interface UseTypewriterProps {
   textBufferRef: MutableRefObject<string>
   isStreamCompleteRef: MutableRefObject<boolean>
-  setWeatherResponse: Dispatch<SetStateAction<string>>
+  setContinuationResponse: Dispatch<SetStateAction<string>>
   typewriterSpeed: number
   autoStart?: boolean
 }
@@ -18,7 +18,7 @@ interface UseTypewriterProps {
 export const useTypewriter = ({
   textBufferRef,
   isStreamCompleteRef,
-  setWeatherResponse,
+  setContinuationResponse,
   typewriterSpeed,
   autoStart = false,
 }: UseTypewriterProps) => {
@@ -37,7 +37,7 @@ export const useTypewriter = ({
       textBufferRef.current = textBufferRef.current.substring(1)
       if (charToType !== '\uFEFF') {
         // Handle potential BOM character
-        setWeatherResponse((prev) => prev + charToType)
+        setContinuationResponse((prev) => prev + charToType)
       }
     } else if (isStreamCompleteRef.current) {
       clearExistingInterval()
@@ -45,7 +45,7 @@ export const useTypewriter = ({
   }, [
     textBufferRef,
     isStreamCompleteRef,
-    setWeatherResponse,
+    setContinuationResponse,
     clearExistingInterval,
   ])
 
