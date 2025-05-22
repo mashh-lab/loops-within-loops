@@ -8,6 +8,7 @@ import {
   PointerEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -63,6 +64,35 @@ const storySegments = fullStoryContent
   .map((segment) => segment.trim())
   .filter((segment) => segment.length > 0)
 
+// Correctly separate dialogue from the single combined footer segment
+const dialogueSegments = storySegments.slice(0, -1) // All segments except the last one
+const footerHtml =
+  storySegments.length > 0 ? storySegments[storySegments.length - 1] : undefined // The very last segment is the footer
+
+// Helper function to parse HTML to plain text
+const parseHtmlToText = (htmlFragment: string): string => {
+  if (typeof window !== 'undefined') {
+    const doc = new DOMParser().parseFromString(
+      `<body>${htmlFragment}</body>`,
+      'text/html',
+    )
+    const text = doc.body.textContent || ''
+    // Replace <br> and <br/> with newlines for better text structure if needed by the agent
+    // text = text.replace(/<br\\s*\\/?>/gi, '\n'); // This line was problematic, DOMParser handles <br>
+    return text.trim()
+  }
+  // Basic fallback for non-browser environments (should not be hit in 'use client')
+  // Simplified this fallback to avoid complex regex issues during linting.
+  // The DOMParser path is the primary one for client-side execution.
+  let text = htmlFragment
+  text = text.split('<br>').join('\n')
+  text = text.split('<br/>').join('\n')
+  text = text.split('<br />').join('\n')
+  text = text.replace(/<[^>]+>/g, '') // Strip other HTML tags
+  text = text.replace(/\s\s+/g, ' ') // Replace multiple spaces with single
+  return text.trim()
+}
+
 interface GlobalMousePos {
   x: number
   y: number
@@ -89,14 +119,15 @@ const LoopsApp: FC = () => {
 
   const tapStartPosRef = useRef<TapStartPos | null>(null)
 
-  // Added state for weather functionality
-  const [city, setCity] = useState<string>('')
-  const [weatherResponse, setWeatherResponse] = useState<string>('')
-  const [weatherError, setWeatherError] = useState<string>('')
+  // Renamed state for conversation functionality
+  const [currentUserInput, setCurrentUserInput] = useState<string>('')
+  const [continuationResponse, setContinuationResponse] = useState<string>('')
+  const [continuationError, setContinuationError] = useState<string>('')
 
   // Refs for typewriter effect
   const textBufferRef = useRef<string>('')
   const isStreamCompleteRef = useRef<boolean>(false)
+  const hasSentInitialContextRef = useRef<boolean>(false) // Tracks if initial context is sent
 
   // Refs for conversation memory
   const threadIdRef = useRef<string | null>(null)
@@ -133,8 +164,8 @@ const LoopsApp: FC = () => {
   const { startTypewriter, clearTypewriter } = useTypewriter({
     textBufferRef,
     isStreamCompleteRef,
-    setWeatherResponse,
-    typewriterSpeed: TYPEWRITER_SPEED, // TYPEWRITER_SPEED is a constant defined outside
+    setContinuationResponse,
+    typewriterSpeed: TYPEWRITER_SPEED,
   })
 
   // Call the useStoryPanelScroll hook
@@ -149,6 +180,7 @@ const LoopsApp: FC = () => {
     // Initialize IDs for conversation memory on component mount
     if (!threadIdRef.current) {
       threadIdRef.current = nanoid()
+      hasSentInitialContextRef.current = false // Reset if new threadId is generated
     }
     if (!resourceIdRef.current) {
       resourceIdRef.current = nanoid() // Or a more persistent user/client ID
@@ -156,6 +188,42 @@ const LoopsApp: FC = () => {
 
     // Cleanup for typewriter is handled by its own hook
     // Cleanup for other hooks (pointer, autonomous, story scroll) is handled within those hooks respectively
+  }, [])
+
+  const parsedInitialMessages = useMemo(() => {
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
+    for (const segment of dialogueSegments) {
+      let role: 'user' | 'assistant' | null = null
+      let htmlContent = ''
+
+      // Updated prefixes to include the surrounding <p> tag
+      const userPrefix = '<p><strong>You:</strong>'
+      const friendPrefix = '<p><strong>Friend:</strong>'
+
+      if (segment.startsWith(userPrefix)) {
+        role = 'user'
+        htmlContent = segment.substring(userPrefix.length)
+        // We need to remove the trailing </p> before parsing, if present
+        if (htmlContent.endsWith('</p>')) {
+          htmlContent = htmlContent.substring(0, htmlContent.length - 4)
+        }
+      } else if (segment.startsWith(friendPrefix)) {
+        role = 'assistant'
+        htmlContent = segment.substring(friendPrefix.length)
+        // We need to remove the trailing </p> before parsing, if present
+        if (htmlContent.endsWith('</p>')) {
+          htmlContent = htmlContent.substring(0, htmlContent.length - 4)
+        }
+      }
+
+      if (role && htmlContent) {
+        const plainTextContent = parseHtmlToText(htmlContent)
+        if (plainTextContent) {
+          messages.push({ role, content: plainTextContent })
+        }
+      }
+    }
+    return messages
   }, [])
 
   const toggleStoryPanel = useCallback(() => {
@@ -205,32 +273,59 @@ const LoopsApp: FC = () => {
     [isStoryPanelOpen, toggleStoryPanel],
   )
 
-  const handleWeatherSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleConversationContinue = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault()
     setLastDirectInputTime(Date.now())
-    if (!city) {
-      setWeatherError('Please enter a city name.')
-      setWeatherResponse('')
+
+    if (!currentUserInput.trim()) {
+      setContinuationError(
+        'Please enter a message to continue the conversation.',
+      )
+      setContinuationResponse('')
       return
     }
 
-    setWeatherError('')
-    setWeatherResponse('')
+    setContinuationError('')
+    setContinuationResponse('')
     textBufferRef.current = ''
     isStreamCompleteRef.current = false
 
-    clearTypewriter() // Clear any previous interval via the hook
-    startTypewriter() // Start the typewriter via the hook
+    clearTypewriter()
+    startTypewriter()
+
+    let messagesPayload: Array<{
+      role: 'system' | 'user' | 'assistant'
+      content: string
+    }> = []
+
+    if (!hasSentInitialContextRef.current) {
+      messagesPayload = [
+        {
+          role: 'system',
+          content:
+            "You are 'Friend', an AI. The following messages make up your conversation history with 'human' (the 'user'). Your previous responses are under the 'assistant' role. Continue this conversation by responding to the latest 'user' message.",
+        },
+        ...parsedInitialMessages,
+        { role: 'user', content: currentUserInput },
+      ]
+    } else {
+      messagesPayload = [{ role: 'user', content: currentUserInput }]
+    }
 
     try {
-      const agent = mastraClient.getAgent('weatherAgent')
+      const agent = mastraClient.getAgent('conversationAgent')
       const streamResponse = await agent.stream({
-        messages: [
-          { role: 'user', content: `What's the weather like in ${city}?` },
-        ],
+        messages: messagesPayload,
         threadId: threadIdRef.current ?? undefined,
         resourceId: resourceIdRef.current ?? undefined,
       })
+
+      if (!hasSentInitialContextRef.current && streamResponse) {
+        // Mark initial context as sent if this was the first attempt and agent.stream succeeded
+        hasSentInitialContextRef.current = true
+      }
 
       if (
         streamResponse &&
@@ -250,7 +345,7 @@ const LoopsApp: FC = () => {
             },
             onErrorPart: (error: unknown) => {
               console.error('Error in stream part:', error)
-              setWeatherError(
+              setContinuationError(
                 (prev) =>
                   prev +
                   `\nError in stream: ${error instanceof Error ? error.message : String(error)}`,
@@ -264,7 +359,7 @@ const LoopsApp: FC = () => {
           })
           .catch((streamError) => {
             console.error('Error processing stream itself:', streamError)
-            setWeatherError('Failed to process the stream. Check console.')
+            setContinuationError('Failed to process the stream. Check console.')
             isStreamCompleteRef.current = true // Signal stream completion
           })
       } else {
@@ -272,18 +367,19 @@ const LoopsApp: FC = () => {
           'streamResponse.processDataStream is not a function or streamResponse is invalid. Structure:',
           streamResponse,
         )
-        setWeatherError('Failed to process the stream. Check console.')
+        setContinuationError('Failed to process the stream. Check console.')
         isStreamCompleteRef.current = true // Also signal completion here
       }
     } catch (error) {
-      console.error('Error fetching weather:', error)
-      setWeatherError(
-        'Failed to fetch weather. Please check the console for details.',
+      console.error('Error fetching continuation:', error)
+      setContinuationError(
+        'Failed to fetch continuation. Please check the console for details.',
       )
-      setWeatherResponse('')
+      setContinuationResponse('')
       isStreamCompleteRef.current = true // Signal completion
       // clearTypewriter(); // The hook should handle this based on isStreamCompleteRef
     }
+    setCurrentUserInput('')
     // The typewriter hook handles its own lifecycle based on isStreamCompleteRef and textBufferRef.
   }
 
@@ -305,19 +401,20 @@ const LoopsApp: FC = () => {
         <StoryStream
           storyTitle={storyTitle}
           storySubtitle={storySubtitle}
-          storySegments={storySegments}
+          storySegments={dialogueSegments}
           scrollProgress={scrollProgress}
-          city={city}
-          setCity={setCity}
-          weatherResponse={weatherResponse}
-          weatherError={weatherError}
-          handleWeatherSubmit={handleWeatherSubmit}
+          continuationResponse={continuationResponse}
+          continuationError={continuationError}
+          handleConversationContinue={handleConversationContinue}
           isStoryPanelOpen={isStoryPanelOpen}
           setLastDirectInputTime={setLastDirectInputTime}
+          currentUserInput={currentUserInput}
+          setCurrentUserInput={setCurrentUserInput}
+          footerHtml={footerHtml}
         />
       </div>
     </div>
   )
 }
 
-export default LoopsApp // Renamed export
+export default LoopsApp
