@@ -1,10 +1,4 @@
-import {
-  Dispatch,
-  FormEvent,
-  PointerEvent,
-  SetStateAction,
-  useState,
-} from 'react'
+import { Dispatch, FormEvent, PointerEvent, SetStateAction } from 'react'
 import '../app/loops-styles.css' // Renamed CSS import path
 
 interface StoryStreamProps {
@@ -35,7 +29,7 @@ export default function StoryStream({
   setCurrentUserInput, // Added for user text input
   footerHtml, // Destructure new prop
 }: StoryStreamProps) {
-  const [isButtonPressed, setIsButtonPressed] = useState(false) // State for button press
+  // const [isButtonPressed, setIsButtonPressed] = useState(false); // Removed unused state
 
   const titleAreaStyle = {
     // backgroundColor: `rgba(30, 30, 30, ${backgroundTintAlpha.toFixed(3)})`, // Already commented out
@@ -131,22 +125,17 @@ export default function StoryStream({
                   />
                   <button
                     type="submit"
-                    onPointerDown={() => setIsButtonPressed(true)}
-                    onPointerUp={() => setIsButtonPressed(false)}
-                    onPointerLeave={() => setIsButtonPressed(false)} // Handle pointer leaving while pressed
+                    // Pointer events related to isButtonPressed were already commented out/removed
                     style={{
-                      background: isButtonPressed
-                        ? 'rgba(65, 65, 65, 0.65)'
-                        : 'rgba(95, 95, 95, 0.6)', // Darker when pressed
+                      background: 'rgba(95, 95, 95, 0.6)',
                       border: 'none',
                       color: '#ddd',
                       padding: '10px 15px',
                       borderRadius: '5px',
                       cursor: 'pointer',
                       lineHeight: '1.5',
-                      transform: isButtonPressed ? 'scale(0.98)' : 'scale(1)', // Slight scale on press
-                      transition:
-                        'transform 0.05s ease-out, background-color 0.05s ease-out', // Smooth transition
+                      // transform: 'scale(1)', // Ensure no lingering transform
+                      // transition: 'transform 0.05s ease-out, background-color 0.05s ease-out', // Transition not needed without active state change
                     }}
                   >
                     ➔
