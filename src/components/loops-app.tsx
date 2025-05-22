@@ -259,7 +259,11 @@ const LoopsApp: FC = () => {
           if (panel) {
             const rect = panel.getBoundingClientRect()
             if (isStoryPanelOpen && event.clientX > rect.right - 20) {
-            } else if ((event.target as HTMLElement).closest('a, button')) {
+            } else if (
+              (event.target as HTMLElement).closest(
+                'a, button, input, textarea',
+              )
+            ) {
             } else {
               toggleStoryPanel()
             }
